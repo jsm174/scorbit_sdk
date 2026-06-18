@@ -29,7 +29,9 @@
 #include "net.h"
 #include "key_resolver.h"
 #include "signer_key_resolver.h"
+#ifdef SCORBIT_SDK_ENABLE_NFC_TPM
 #include "nfc_tpm_key_resolver.h"
+#endif
 #include "soft_key_resolver.h"
 #include "utils/thread_priority.h"
 #include <logger/logger.h>
@@ -420,7 +422,9 @@ sb_game_handle_t sb_create_game_state(sb_config_t config)
 
         resolvers.push_back(std::make_unique<SignerKeyResolver>(std::move(cb)));
     } else {
+#ifdef SCORBIT_SDK_ENABLE_NFC_TPM
         resolvers.push_back(std::make_unique<NfcTpmKeyResolver>());
+#endif
         resolvers.push_back(std::make_unique<SoftKeyResolver>());
     }
 

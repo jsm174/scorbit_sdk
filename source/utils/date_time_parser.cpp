@@ -69,8 +69,9 @@ bool setSystemTime(int64_t timestamp)
     ft.dwLowDateTime = static_cast<DWORD>(ft_ticks);
     ft.dwHighDateTime = static_cast<DWORD>(ft_ticks >> 32);
 
-    // Windows 10+
-    if (auto fn = reinterpret_cast<decltype(&SetSystemTimePreciseAsFileTime)>(GetProcAddress(
+    // Windows 10+ (resolved dynamically; not declared in all Windows headers)
+    using SetSystemTimePreciseAsFileTime_t = BOOL(WINAPI *)(const FILETIME *);
+    if (auto fn = reinterpret_cast<SetSystemTimePreciseAsFileTime_t>(GetProcAddress(
                 GetModuleHandleA("kernel32.dll"), "SetSystemTimePreciseAsFileTime"))) {
         return fn(&ft) != 0;
     }

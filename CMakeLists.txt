@@ -28,6 +28,7 @@ include(${MY_CMAKE_DIR}/ArchDetect.cmake)
 
 option(SCORBIT_SDK_PRODUCTION "Production build for distribution" OFF)
 option(SCORBIT_SDK_SHARED "Build shared library" ON)
+option(SCORBIT_SDK_ENABLE_NFC_TPM "Build the NFC/TPM hardware key resolver (requires POSIX serial APIs)" ON)
 
 set(SCORBIT_LOGGER "callback" CACHE STRING "Logger backend to use (callback or spdlog)")
 set_property(CACHE SCORBIT_LOGGER PROPERTY STRINGS callback spdlog)
@@ -125,12 +126,14 @@ CPMAddPackage(
     SYSTEM YES
 )
 
-CPMAddPackage(
-    NAME nfc
-    SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/libs/nfc
-    EXCLUDE_FROM_ALL YES
-    SYSTEM YES
-)
+if(SCORBIT_SDK_ENABLE_NFC_TPM)
+    CPMAddPackage(
+        NAME nfc
+        SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/libs/nfc
+        EXCLUDE_FROM_ALL YES
+        SYSTEM YES
+    )
+endif()
 
 # --- Add resources ---
 
@@ -238,8 +241,6 @@ target_sources(
         source/session_flags.h
         source/signer_types.h
         source/key_resolver.h
-        source/nfc_tpm_key_resolver.h
-        source/nfc_tpm_key_resolver.cpp
         source/provisioning_client.h
         source/provisioning_client.cpp
         source/soft_key_resolver.h
@@ -295,13 +296,35 @@ target_link_libraries(
         OpenSSL::Crypto
         LibArchive::LibArchive
         $<BUILD_INTERFACE:centrifugo-cpp>
-        $<BUILD_INTERFACE:nfc>
         $<BUILD_INTERFACE:tpm>
         $<BUILD_INTERFACE:logger>
         concurrentqueue
 )
 if(UNIX AND NOT APPLE)
     target_link_libraries(${PROJECT_NAME} PUBLIC dl)
+endif()
+
+if(WIN32)
+    # Linked after LibArchive so the static lib's deps resolve:
+    #   z/xmllite  - libarchive's zlib (gzip) and xar (xmllite) backends
+    #   iphlpapi   - mac_address.cpp GetAdaptersAddresses (its MSVC #pragma comment is ignored by mingw)
+    #   wbemuuid/ole32/oleaut32 - WMI machine info (IWbemLocator)
+    target_link_libraries(${PROJECT_NAME} PRIVATE z xmllite iphlpapi wbemuuid ole32 oleaut32)
+endif()
+
+if(SCORBIT_SDK_ENABLE_NFC_TPM)
+    target_sources(
+        ${PROJECT_NAME}
+        PRIVATE
+            source/nfc_tpm_key_resolver.h
+            source/nfc_tpm_key_resolver.cpp
+    )
+    target_link_libraries(${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:nfc>)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE SCORBIT_SDK_ENABLE_NFC_TPM)
+else()
+    # NFC hardware disabled: provide a no-op nfc::ProbesManager so net/game_state
+    # compile unchanged (the serial-port nfc lib is POSIX-only and won't build on Windows).
+    target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/cmake/nfc_stub/include)
 endif()
 
 target_include_directories(

@@ -22,13 +22,16 @@
 #include <logger/logger.h>
 #include <scorbit_sdk/version.h>
 #include <nfc/probes_manager.h>
+#ifdef SCORBIT_SDK_ENABLE_NFC_TPM
 #include <nfc/Probe.h>
+#endif
 #include <boost/uuid.hpp>
 #include <utility>
 #include <functional>
 
 using namespace std::placeholders;
 
+#ifdef SCORBIT_SDK_ENABLE_NFC_TPM
 namespace {
 
 void displayProbeInfo(ProbeBase *probe, const std::string &device)
@@ -42,6 +45,7 @@ void displayProbeInfo(ProbeBase *probe, const std::string &device)
 }
 
 } // namespace
+#endif
 
 namespace scorbit {
 namespace detail {
@@ -50,7 +54,9 @@ GameStateImpl::GameStateImpl(std::unique_ptr<NetBase> net)
     : m_probesManager {std::make_shared<nfc::ProbesManager>()}
     , m_net {std::move(net)}
 {
+#ifdef SCORBIT_SDK_ENABLE_NFC_TPM
     m_probesManager->enumerate(nfc::ProbeType::NFC, std::string {}, displayProbeInfo);
+#endif
     m_probesManager->setNfcLeds(nfc::NfcLedMode::Idle);
 
     m_net->setProbesManager(m_probesManager);

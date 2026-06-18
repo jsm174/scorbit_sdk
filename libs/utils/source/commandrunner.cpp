@@ -11,9 +11,11 @@
 #include <logger/logger.h>
 #include <cpp-subprocess/subprocess.hpp>
 
+#ifndef _WIN32
 #include <sys/resource.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#endif
 #include <cstdlib>
 #include <future>
 
@@ -24,6 +26,7 @@ constexpr int PROCESS_PRIORITY = 9; // Least priority
 
 namespace utils {
 
+#ifndef _WIN32
 // Runs command and return future which will be set -1 in case of error
 // or exit status of the command
 std::future<int> runCommand(const std::string &command, const std::vector<std::string> &parameters)
@@ -76,6 +79,7 @@ int runCommandAndGetResult(const std::string &command, const std::vector<std::st
 
     return result;
 }
+#endif // !_WIN32
 
 CommandResult runCommandAndGetOutput(const string &command, const vector<string> &parameters)
 {
