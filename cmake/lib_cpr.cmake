@@ -1,8 +1,15 @@
-find_package(CURL 8.0.0)
-if(CURL_FOUND)
+if(NOT DEFINED CPR_USE_SYSTEM_CURL)
+    find_package(CURL 8.0.0)
+    if(CURL_FOUND)
+        set(CPR_USE_SYSTEM_CURL ON)
+    endif()
+endif()
+
+if(CPR_USE_SYSTEM_CURL)
     set(CPR_OPTIONS "CPR_USE_SYSTEM_CURL ON")
 else()
     unset(CURL_LIBRARIES)
+    set(CPR_OPTIONS "CPR_USE_SYSTEM_CURL OFF")
 endif()
 
 set(cpr_PATCH_FILE "${CMAKE_CURRENT_LIST_DIR}/patches/cpr-gcc-9.3-build-fix.patch")

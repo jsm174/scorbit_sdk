@@ -309,7 +309,8 @@ if(WIN32)
     #   z/xmllite  - libarchive's zlib (gzip) and xar (xmllite) backends
     #   iphlpapi   - mac_address.cpp GetAdaptersAddresses (its MSVC #pragma comment is ignored by mingw)
     #   wbemuuid/ole32/oleaut32 - WMI machine info (IWbemLocator)
-    target_link_libraries(${PROJECT_NAME} PRIVATE z xmllite iphlpapi wbemuuid ole32 oleaut32)
+    #   ws2_32/crypt32/bcrypt - statically-linked curl (cpr built with CPR_USE_SYSTEM_CURL OFF)
+    target_link_libraries(${PROJECT_NAME} PRIVATE z xmllite iphlpapi wbemuuid ole32 oleaut32 ws2_32 crypt32 bcrypt)
 endif()
 
 if(SCORBIT_SDK_ENABLE_NFC_TPM)
